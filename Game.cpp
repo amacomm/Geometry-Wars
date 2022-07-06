@@ -42,19 +42,26 @@ void restart() {
     initialize();
 }
 
-unsigned int **image;
+unsigned int** image;
+unsigned int** imShip;
+unsigned int **medusa;
 // initialize game data in this function
 void initialize()
 {
     srand(time(0));
-    /*enemy.push_back(Enemy(Coord(100, 100), Direct(-1,-1)));
-    enemy.push_back(TrackingEnemy(Coord(500, 100)));
-    enemy.push_back(Enemy(Coord(700, 100), Direct(1, -1)));*/
     start = 0.001;
     image = new unsigned int* [SCREEN_HEIGHT+10];
     for (int i = 0; i < SCREEN_HEIGHT+10; i++)
         image[i] = new unsigned int[SCREEN_WIDTH+10];
     loader(image, (char*)"amacomm.bmp", SCREEN_WIDTH, SCREEN_HEIGHT);
+	imShip = new unsigned int* [34];
+	for (int i = 0; i < 34; i++)
+		imShip[i] = new unsigned int[45];
+	loader(imShip, (char*)"ship.bmp", 45, 34);
+	//medusa = new unsigned int* [50];
+	//for (int i = 0; i < 50; i++)
+	//	medusa[i] = new unsigned int[50];
+	//loader(medusa, (char*)"medusa.bmp", 50, 50);
     alf = ABCc();
     PlaySound("amacomm.wav", NULL, SND_ASYNC );
     
@@ -179,9 +186,9 @@ void draw()
 			buffer[i][j] = image[i+(int)(d.y*5)+5][j + (int)(d.x * 5)+5];
 		}
 	}
-	Draw(buffer, ship);
+	Draw(buffer, ship, imShip);
 	for (int i = 0; i < enemy.size(); i++)
-		Draw(buffer, *enemy[i]);
+		Draw(buffer, *enemy[i]/*, medusa*/);
 	for (int i = 0; i < weapon.size(); i++)
 		Draw(buffer, weapon[i]);
 	for (int i = 0; i < explosion.size(); i++)
@@ -211,5 +218,8 @@ void finalize()
     for (int i = 0; i < SCREEN_HEIGHT; i++)
         delete[] image[i];
     delete[] image;
+	for (int i = 0; i < 34; i++)
+		delete[] imShip[i];
+	delete[] imShip;
 }
 

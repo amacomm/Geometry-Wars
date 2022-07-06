@@ -1,10 +1,8 @@
 #pragma once
 #include "Engine.h"
-#include <vector>
 #include <ctime>
 #include <windows.h>
 #include "Elements.h"
-
 
 class Explosion {
 	Coord _coord;
@@ -63,8 +61,6 @@ extern void Draw(uint32_t(*image)[SCREEN_WIDTH], Explosion& e) {
 	}
 }
 
-
-
 class Object {
 protected:
 	float _speed;
@@ -78,7 +74,7 @@ protected:
 	}
 
 public:
-	friend void Draw(uint32_t(*image)[SCREEN_WIDTH], Object&);
+	friend void Draw(uint32_t(*image)[SCREEN_WIDTH], Object&, unsigned int**);
 	virtual void Rotate() {
 		for (int i = 0; i < _dots.size(); ++i) {
 			_dots[i].x *= cos(_direct.x);
@@ -130,7 +126,8 @@ public:
 		return l;
 	}
 };
-extern void Draw(uint32_t(*image)[SCREEN_WIDTH], Object &o) {
+extern void Draw(uint32_t(*image)[SCREEN_WIDTH], Object &o, unsigned int** img = nullptr) {
+	if(!img)
 	for (int i = 0; i < o._dots.size(); i++) {
 		int x0 = -o._dots[i].x + o._coord.x,
 			y0 = -o._dots[i].y + o._coord.y,
@@ -164,8 +161,36 @@ extern void Draw(uint32_t(*image)[SCREEN_WIDTH], Object &o) {
 			}
 		}
 	}
+	else {
+		std::vector<float> lambda(3);
+		std::vector<Coord> texture = { Coord(21, 0), Coord(44,33) ,Coord(28, 21), Coord(0,33) };
+		//std::vector<Coord> texture = { Coord(0, 0), Coord(49,0) ,Coord(49, 50), Coord(0,49)};
+		bool s = true;
+		for (int t = 0; t < o._dots.size() - 2; t++) {
+			int d[] = { 0, 1 + t, 2 + t };
+			int xmax = (int)o._coord.x - (o._dots[d[0]].x > o._dots[d[1]].x ? (o._dots[d[2]].x > o._dots[d[1]].x ? o._dots[d[1]].x : o._dots[d[2]].x) : (o._dots[d[2]].x > o._dots[d[0]].x ? o._dots[d[0]].x : o._dots[d[2]].x));
+			int ymax = (int)o._coord.y - (o._dots[d[0]].y > o._dots[d[1]].y ? (o._dots[d[2]].y > o._dots[d[1]].y ? o._dots[d[1]].y : o._dots[d[2]].y) : (o._dots[d[2]].y > o._dots[d[0]].y ? o._dots[d[0]].y : o._dots[d[2]].y));
+			int xmin = (int)o._coord.x - (o._dots[d[0]].x < o._dots[d[1]].x ? (o._dots[d[2]].x < o._dots[d[1]].x ? o._dots[d[1]].x : o._dots[d[2]].x) : (o._dots[d[2]].x < o._dots[d[0]].x ? o._dots[d[0]].x : o._dots[d[2]].x));
+			int ymin = (int)o._coord.y - (o._dots[d[0]].y < o._dots[d[1]].y ? (o._dots[d[2]].y < o._dots[d[1]].y ? o._dots[d[1]].y : o._dots[d[2]].y) : (o._dots[d[2]].y < o._dots[d[0]].y ? o._dots[d[0]].y : o._dots[d[2]].y));
+			for (int x = xmin; x < xmax; ++x)
+				for (int y = ymin; y < ymax; ++y) {
+					s = true;
+					for (int i = 0; i < 3; i++)
+					{
+						int k1 = d[i], k2 = d[(i + 1) % 3], k0 = d[(i - 1) % 3 >= 0 ? (i - 1) % 3 : (i - 1) % 3 + 3];
+						lambda[i] = ((o._dots[k1].x - o._dots[k2].x) * (-y - o._dots[k2].y + (int)o._coord.y) - (o._dots[k1].y - o._dots[k2].y) * (-x - o._dots[k2].x + (int)o._coord.x)) / ((o._dots[k1].x - o._dots[k2].x) * (o._dots[k0].y - o._dots[k2].y) - (o._dots[k1].y - o._dots[k2].y) * (o._dots[k0].x - o._dots[k2].x));
+						s = s && (lambda[i] >= 0);
+					}
+					if (s)
+						if (!(x < 0 || x >= SCREEN_WIDTH || y < 0 || y >= SCREEN_WIDTH)) {
+							int t1 = texture[d[2]].y * lambda[0] + texture[d[0]].y * lambda[1] + texture[d[1]].y * lambda[2];
+							int t2 = texture[d[2]].x * lambda[0] + texture[d[0]].x * lambda[1] + texture[d[1]].x * lambda[2];
+							buffer[y][x] = img[t1][t2];//Colour(255, 255, 255);
+						}
+				}
+		}
+	}
 }
-
 
 class Weapon : public Object {
 public:
@@ -214,6 +239,7 @@ public:
 	}
 	void Rotate() override {
 		_dots = Shapes::ship(SCREEN_HEIGHT / 20);
+		Roll();
 		float t = -atan2(_direct.y, _direct.x) - 3.1416 / 2;
 		for (int i = 0; i < _dots.size(); i++)
 		{
