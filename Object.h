@@ -63,65 +63,7 @@ extern void Draw(uint32_t(*image)[SCREEN_WIDTH], Explosion& e) {
 	}
 }
 
-class Create {
-	Coord _coord;
-	int _count;
-	std::vector<Coord> _dots1, _dots2;
-	std::vector<unsigned char> _speed;
-public:
-	Create(Coord coord = Coord()) : _coord(coord) {
-		srand(time(0));
-		_count = rand() % 10+10;
-		for (int i = 0; i < _count; ++i) {
-			Direct d(rand() % 100 - 50, rand() % 100 - 50);
-			int r = rand() % 2 ? 50 : 25;
-			_dots1.push_back(Coord(coord.x + d.x * r, coord.y + d.y * r));
-			_dots2.push_back(Coord(coord.x + d.x * r, coord.y + d.y * r));
-			_speed.push_back(r*3);
-		}
-	}
-	void Draw(uint32_t(*image)[SCREEN_WIDTH]) {
-		for (int i = 0; i < _count; i++) {
-			int x0 = -_dots1[i].x + _coord.x,
-				y0 = -_dots1[i].y + _coord.y,
-				x1 = (-_dots2[i].x) + _coord.x,
-				y1 = (-_dots2[i].y) + _coord.y;
-			bool steep = false;
-			if (std::abs(x0 - x1) < std::abs(y0 - y1)) {
-				std::swap(x0, y0);
-				std::swap(x1, y1);
-				steep = true;
-			}
-			if (x0 > x1) {
-				std::swap(x0, x1);
-				std::swap(y0, y1);
-			}
-			int dx = x1 - x0;
-			int dy = y1 - y0;
-			float derror = std::abs(dy / float(dx));
-			float error = 0;
-			int y = y0;
-			for (int x = x0; x <= x1; x++) {
-				if (!(x < 0 || x >= SCREEN_WIDTH || y < 0 || y >= SCREEN_HEIGHT))
-				{
-					if (steep) image[x][y] = Colour(255, 255, 255);
-					else image[y][x] = Colour(255, 255, 255);
-				}
-				error += derror;
-				if (error > .5) {
-					y += (y1 > y0 ? 1 : -1);
-					error -= 1.;
-				}
-			}
-		}
-	}
-	void MakeMove() {
-		for (int i = 0; i < _count; i++) {
-			_dots2[i].x += (_dots2[i].x - _coord.x) / _speed[i];
-			_dots2[i].y += (_dots2[i].x - _coord.x) / _speed[i];
-		}
-	}
-};
+
 
 class Object {
 protected:
@@ -289,6 +231,20 @@ public:
 	Coord getShipNose() {
 		return _dots[0];
 	}
+	void Roll() {
+		Direct roll = _direct +Direct(_speed, _speed2);
+		float t = -atan2(roll.y, roll.x) - 3.1416 / 2;
+		for (int i = 1; i < _dots.size(); i+=2)
+		{
+			float x = _dots[i].x * cos(t) + _dots[i].y * sin(t);
+			float y = _dots[i].y * cos(t) - _dots[i].x * sin(t);
+			_dots[i].x = x;
+			_dots[i].y = y;
+		}
+	}
+	void Deth() {
+		_coord = Coord(-100, -100);
+	}
 };
 
 class Enemy: public Object {
@@ -309,12 +265,70 @@ public:
 	}
 	virtual bool MakeMove(Coord coord = Coord()) = 0;
 };
+class Create {
+	Coord _coord;
+	int _count;
+	std::vector<Coord> _dots1, _dots2;
+public:
+	Enemy* enemy;
+	Create(Enemy* e = nullptr) : _coord(enemy->getCoord()), enemy(e) {
+		srand(time(0));
+		_count = rand() % 5 + 5;
+		for (int i = 0; i < _count; ++i) {
+			Direct d(rand() % 100 - 50, rand() % 100 - 50);
+			_dots1.push_back(Coord(_coord.x + d.x * 50, _coord.y + d.y * 50));
+			_dots2.push_back(Coord(_coord.x + d.x * 50, _coord.y + d.y * 50));
+		}
+	}
+	void Draw(uint32_t(*image)[SCREEN_WIDTH]) {
+		for (int i = 0; i < _count; i++) {
+			int x0 = _dots1[i].x,
+				y0 = _dots1[i].y,
+				x1 = (_dots2[i].x),
+				y1 = (_dots2[i].y);
+			bool steep = false;
+			if (std::abs(x0 - x1) < std::abs(y0 - y1)) {
+				std::swap(x0, y0);
+				std::swap(x1, y1);
+				steep = true;
+			}
+			if (x0 > x1) {
+				std::swap(x0, x1);
+				std::swap(y0, y1);
+			}
+			int dx = x1 - x0;
+			int dy = y1 - y0;
+			float derror = std::abs(dy / float(dx));
+			float error = 0;
+			int y = y0;
+			for (int x = x0; x <= x1; x++) {
+				if (!(x < 0 || x >= SCREEN_WIDTH || y < 0 || y >= SCREEN_HEIGHT))
+				{
+					if (steep) image[x][y] = Colour(255, 255, 255);
+					else image[y][x] = Colour(255, 255, 255);
+				}
+				error += derror;
+				if (error > .5) {
+					y += (y1 > y0 ? 1 : -1);
+					error -= 1.;
+				}
+			}
+		}
+	}
+	bool MakeMove() {
+		for (int i = 0; i < _count; i++) {
+			_dots2[i].x += (-_dots2[i].x + _coord.x) / 60;
+			_dots2[i].y += (-_dots2[i].y + _coord.y) / 60;
+		}
+		return (-_dots2[0].x + _coord.x - _dots2[0].y + _coord.y) < 1;
+	}
+};
 
 class StableEnemy final: public Enemy {
 public:
-	StableEnemy(Coord coord, Direct direct, Colour colour = Colour(255, 0, 0)) {
+	StableEnemy(Coord coord, Direct direct, int level = 0, Colour colour = Colour(255, 0, 0)) {
 		_life = 5;
-		_speed = (float)2/4;
+		_speed = 0.25+level*0.125;
 		_colorStabile= _colour = colour;
 		_dots = Shapes::enemy(SCREEN_HEIGHT / 20);
 		_coord = coord;
@@ -358,10 +372,10 @@ class TrackingEnemy: public Enemy {
 		_dist += 3.1416 / 600;
 	}
 public:
-	TrackingEnemy( Coord coord, Direct direct = Direct(0,1), Colour colour = Colour(255, 0, 255)) {
+	TrackingEnemy( Coord coord, Direct direct = Direct(0,1), int level = 0, Colour colour = Colour(255, 0, 255)) {
 		_dist = 0;
 		_life = 5;
-		_speed = (float)2/4;
+		_speed = 0.25 + level * 0.025;
 		_colorStabile = _colour = colour;
 		_dots = Shapes::enemy(SCREEN_HEIGHT / 20);
 		Rotate(3.1416 / 4);

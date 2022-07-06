@@ -7,10 +7,7 @@ public:
 	float x, y;
 	Direct() :x(0), y(1) {}
 	Direct(float t1, float t2) : x(t1), y(t2) {
-		if (x == 0 && y == 0){
-			x = -1;
-			y = -1;
-		}
+		if (x != 0 && y != 0)
 		Norm();
 	}
 	Direct(float t) {
@@ -22,6 +19,9 @@ public:
 		float t = sqrt(x * x + y * y);
 		x /= t;
 		y /= t;
+	}
+	Direct operator+(Direct d) {
+		return Direct(x + d.x, y + d.y);
 	}
 };
 
@@ -67,7 +67,7 @@ struct Shapes
 {
 	static std::vector<Coord> ship(float a = 1)
 	{
-		return { Coord(0, 1.732 / 3) * a, Coord(1.732 / 3,-1.732 / 6) * a, Coord(-1.732 / 3,-1.732 / 6) * a };
+		return { Coord(0, 1.732 / 3) * a, Coord(1.732 / 3,-1.732 / 6) * a,Coord(0,-1.732 / 12) * a, Coord(-1.732 / 3,-1.732 / 6) * a };
 	}
 	static std::vector<Coord> weapon(float a = 1)
 	{
@@ -88,4 +88,26 @@ void loader(unsigned int** image, char* name, int w, int h) {
 		}
 	}
 	delete[] charImage;
+}
+
+std::vector<unsigned int**> ABCc() {
+	std::vector<unsigned int**> alf;
+	unsigned int** img;
+	img = new unsigned int* [80];
+	for (int i = 0; i < 80; i++)
+		img[i] = new unsigned int[170];
+	loader(img, (char*)"ABC.bmp", 170, 80);
+	for (int i = 0; i < 36; i++) {
+		alf.push_back(new unsigned int* [20]);
+		for (int j = 0; j < 20; j++) {
+			alf[i][j] = new unsigned int[17];
+			for (int k = 0; k < 17; k++) {
+				alf[i][j][k] = img[j+20*(i/10)][k+17*(i%10)];
+			}
+		}
+	}
+	for (int i = 0; i < 80; i++)
+		delete[] img[i];
+	delete[] img;
+	return alf;
 }
