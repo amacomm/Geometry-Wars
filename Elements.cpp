@@ -54,7 +54,7 @@ void loader(unsigned int** image, char* name, int w, int h) {
 	charImage = BMP24_read(h, w, name);
 	for (int i = 0; i < h; i++) {
 		for (int j = 0; j < w; j++) {
-			image[h - i - 1][j] = Colour(charImage[(j + w * i) * 3], charImage[(j + w * i) * 3 + 1], charImage[(j + w * i) * 3 + 2]);
+			image[h - i - 1][j] = Colour(charImage[(j + w * i) * 3+2], charImage[(j + w * i) * 3 + 1], charImage[(j + w * i) * 3]);
 		}
 	}
 	delete[] charImage;
@@ -66,7 +66,7 @@ std::vector<unsigned int**> ABCc() {
 	img = new unsigned int* [80];
 	for (int i = 0; i < 80; i++)
 		img[i] = new unsigned int[170];
-	loader(img, (char*)"ABC.bmp", 170, 80);
+	loader(img, (char*)"picture/ABC.bmp", 170, 80);
 	for (int i = 0; i < 36; i++) {
 		alf.push_back(new unsigned int* [20]);
 		for (int j = 0; j < 20; j++) {

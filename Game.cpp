@@ -2,7 +2,6 @@
 #include <stdlib.h>
 #include <memory.h>
 #include "Object.h"
-#include "Logic.h"
 
 //
 //  You are free to modify this file
@@ -53,17 +52,17 @@ void initialize()
     image = new unsigned int* [SCREEN_HEIGHT+10];
     for (int i = 0; i < SCREEN_HEIGHT+10; i++)
         image[i] = new unsigned int[SCREEN_WIDTH+10];
-    loader(image, (char*)"amacomm.bmp", SCREEN_WIDTH, SCREEN_HEIGHT);
+    loader(image, (char*)"picture/amacomm1.bmp", SCREEN_WIDTH, SCREEN_HEIGHT);
 	imShip = new unsigned int* [34];
 	for (int i = 0; i < 34; i++)
 		imShip[i] = new unsigned int[45];
-	loader(imShip, (char*)"ship.bmp", 45, 34);
+	loader(imShip, (char*)"picture/ship.bmp", 45, 34);
 	//medusa = new unsigned int* [50];
 	//for (int i = 0; i < 50; i++)
 	//	medusa[i] = new unsigned int[50];
-	//loader(medusa, (char*)"medusa.bmp", 50, 50);
+	//loader(medusa, (char*)"picture/medusa.bmp", 50, 50);
     alf = ABCc();
-    PlaySound("amacomm.wav", NULL, SND_ASYNC );
+    PlaySound("music/amacomm.wav", NULL, SND_ASYNC );
     
     /*for (int i = 0; i < SCREEN_HEIGHT; i++) {
         for (int j = 0; j < SCREEN_WIDTH; j++) {
@@ -81,13 +80,15 @@ void initialize()
 // dt - time elapsed since the previous update (in seconds)
 void act(float dt)
 {
+	if (dt < 0.001)
+		dt = 0.01;
 	if (start < 3) {
 		start += dt;
 		start = start >= 3 ? 10 : start;
 		return;
 	}
 	else if (start == 10) {
-		PlaySound("music_wave.wav", GetModuleHandle(NULL), SND_FILENAME | SND_ASYNC | SND_LOOP);
+		PlaySound("music/music_wave.wav", GetModuleHandle(NULL), SND_FILENAME | SND_ASYNC | SND_LOOP);
 		ship = Ship();
 		enemy = Script::one();
 		for (int i = 0; i < SCREEN_HEIGHT + 10; i++) {
@@ -98,8 +99,9 @@ void act(float dt)
 		start -= 1;
 	}
 
-
 	if (enemy.size() == 0 && enemyBuffer.size() == 0) {
+		//enemy.push_back(new TrackingEnemy(Coord(100, 100)));
+
 		pause -= dt;
 		if (pause <= 0) {
 			pause = pauseConst;
@@ -129,6 +131,8 @@ void act(float dt)
 	else if (is_key_pressed('S'))
 		ship.Braking(dt);
 	else ship.Moving();
+	if (is_key_pressed('X') && shootTime <= 0)
+		ship.set3D();
 
 	for (int i = 0; i < explosion.size(); i++)
 		if (explosion[i].MakeMove()) explosion.erase(explosion.begin() + i--);
@@ -180,10 +184,11 @@ void draw()
 {
 	// clear backbuffer
 	//memset(buffer, 0, SCREEN_HEIGHT * SCREEN_WIDTH * sizeof(uint32_t));
-    Direct d = Direct(ship.getCoord().x - SCREEN_WIDTH/2, ship.getCoord().y - SCREEN_HEIGHT / 2);
+    Direct d = Direct(-ship.getCoord().x + SCREEN_WIDTH/2, -ship.getCoord().y + SCREEN_HEIGHT / 2);
+	int t1 = abs(SCREEN_WIDTH / 2 -ship.getCoord().x), t2 = abs(SCREEN_HEIGHT / 2 -ship.getCoord().y);
 	for (int i = 0; i < SCREEN_HEIGHT; i++) {
 		for (int j = 0; j < SCREEN_WIDTH; j++) {
-			buffer[i][j] = image[i+(int)(d.y*5)+5][j + (int)(d.x * 5)+5];
+			buffer[i][j] = image[i+(int)(d.y*t2*5/ (SCREEN_HEIGHT / 2))+5][j + (int)(d.x *t1* 5/ (SCREEN_WIDTH / 2))+5];
 		}
 	}
 	Draw(buffer, ship, imShip);
