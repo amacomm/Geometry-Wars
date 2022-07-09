@@ -171,13 +171,13 @@ struct Script
 		for (int i = 0; i < n; ++i) {
 			if (line == column) {
 				if (i % 2 && e2-- > 0)
-					vec.push_back(new TrackingEnemy(Coord(100 + i * 82, line ? 100 : SCREEN_HEIGHT - 100), Direct(0, -1 + (1 - line) * 2), level));
+					vec.push_back(new TrackingEnemy(Coord((100 + i * 82)% SCREEN_WIDTH, line ? 100 : SCREEN_HEIGHT - 100), Direct(0, -1 + (1 - line) * 2), level));
 				else
 					vec.push_back(new StableEnemy(Coord(100 + i * 82, line ? 100 : SCREEN_HEIGHT - 100), Direct(0, -1 + (1 - line) * 2), level));
 			}
 			else {
 				if (i % 2 && e2-- > 0)
-					vec.push_back(new TrackingEnemy(Coord(column ? 100 : SCREEN_WIDTH - 100, 100 + i * 57), Direct(-1 + column * 2, 0), level));
+					vec.push_back(new TrackingEnemy(Coord(column ? 100 : SCREEN_WIDTH - 100, (100 + i * 57) % SCREEN_HEIGHT), Direct(-1 + column * 2, 0), level));
 				else
 					vec.push_back(new StableEnemy(Coord(column ? 100 : SCREEN_WIDTH - 100, 100 + i * 57), Direct(-1 + column * 2, 0), level));
 			}
