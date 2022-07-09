@@ -2,6 +2,8 @@
 #include <stdlib.h>
 #include <memory.h>
 #include "Object.h"
+#pragma comment(lib, "Winmm.lib")
+
 
 //
 //  You are free to modify this file
@@ -80,8 +82,9 @@ void initialize()
 // dt - time elapsed since the previous update (in seconds)
 void act(float dt)
 {
-	if (dt < 0.001)
-		dt = 0.01;
+	unsigned int start_time = clock();
+	if (dt < 1.0e-10)
+		dt = 1.0e-5;
 	if (start < 3) {
 		start += dt;
 		start = start >= 3 ? 10 : start;
@@ -106,7 +109,7 @@ void act(float dt)
 		if (pause <= 0) {
 			pause = pauseConst;
 			int r = rand() % 3;
-			enemyBuffer = r == 0 ? Script::one(6, 4, player.getLevel()) : r == 1 ? Script::two(6, 4, player.getLevel()) : Script::three(6, 4, player.getLevel());
+			enemyBuffer = r == 0 ? Script::one(player.getLevel()) : r == 1 ? Script::two(player.getLevel()) : Script::three(player.getLevel());
 			enemy.push_back(enemyBuffer[0]);
 			enemyBuffer.erase(enemyBuffer.begin());
 		}
@@ -122,25 +125,35 @@ void act(float dt)
 
 	if (is_mouse_button_pressed(0) && shootTime <= 0) {
 		shootTime = shootConst - (0.015 * player.getLevel() > 0.15 ? 0.15 : 0.015 * player.getLevel());
-		weapon.push_back(Weapon(ship.getCoord() - ship.getShipNose(), Direct(ship.getDirect().x - ship.getShipNose().x, ship.getDirect().y + ship.getShipNose().y)));
+		weapon.push_back(Weapon(ship.getCoord() - ship.getShipNose(), Direct(ship.getDirect().x - ship.getShipNose().x, ship.getDirect().y + ship.getShipNose().y), player.getLevel()));
 	}
 	shootTime -= dt;
 	ship.ChangeDirection(get_cursor_x(), get_cursor_y());
+	start_time = clock()-start_time ;
+	dt += start_time/1000.0;
+	start_time = clock();
 	if (is_key_pressed('W'))
 		ship.MakeMove(dt);
 	else if (is_key_pressed('S'))
 		ship.Braking(dt);
-	else ship.Moving();
+	else ship.Moving(dt);
 	if (is_key_pressed('X') && shootTime <= 0)
 		ship.set3D();
-
+	start_time = clock()-start_time ;
+	dt += start_time/1000.0;
+	start_time = clock();
 	for (int i = 0; i < explosion.size(); i++)
 		if (explosion[i].MakeMove()) explosion.erase(explosion.begin() + i--);
 	for (int i = 0; i < create.size(); i++)
 		create[i].MakeMove();
-
+	start_time = clock()-start_time ;
+	dt += start_time/1000.0;
+	start_time = clock();
 	for (int i = 0; i < weapon.size(); i++) {
-		weapon[i].MakeMove();
+		weapon[i].MakeMove(dt);
+		start_time = clock()-start_time ;
+		dt += start_time/1000.0;
+		start_time = clock();
 		if (weapon[i].TouchedFrame()) {
 			weapon.erase(weapon.begin() + i--);
 			continue;
@@ -160,7 +173,10 @@ void act(float dt)
 		}
 	}
 	for (int i = 0; i < enemy.size(); i++) {
-		enemy[i]->MakeMove(ship.getCoord());
+		enemy[i]->MakeMove(dt, ship.getCoord());
+		start_time = clock()-start_time ;
+		dt += start_time/1000.0;
+		start_time = clock();
 		if (enemy[i]->IsIncluded(ship.getCoord())) {
 			explosion.push_back(Explosion(ship.getCoord()));
 			ship.Deth();
@@ -185,10 +201,9 @@ void draw()
 	// clear backbuffer
 	//memset(buffer, 0, SCREEN_HEIGHT * SCREEN_WIDTH * sizeof(uint32_t));
     Direct d = Direct(-ship.getCoord().x + SCREEN_WIDTH/2, -ship.getCoord().y + SCREEN_HEIGHT / 2);
-	int t1 = abs(SCREEN_WIDTH / 2 -ship.getCoord().x), t2 = abs(SCREEN_HEIGHT / 2 -ship.getCoord().y);
 	for (int i = 0; i < SCREEN_HEIGHT; i++) {
 		for (int j = 0; j < SCREEN_WIDTH; j++) {
-			buffer[i][j] = image[i+(int)(d.y*t2*5/ (SCREEN_HEIGHT / 2))+5][j + (int)(d.x *t1* 5/ (SCREEN_WIDTH / 2))+5];
+			buffer[i][j] = image[i + (int)(d.y * 5) + 5][j + (int)(d.x * 5) + 5];
 		}
 	}
 	Draw(buffer, ship, imShip);

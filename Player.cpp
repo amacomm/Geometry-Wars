@@ -12,7 +12,7 @@ int Player::getLevel() {
 }
 void Player::addScore(int score) {
 	_score += score;
-	if (_score / 250 - _level > 0)
+	if ((_score / 250 - _level) > 0)
 		++_level;
 }
 void Player::Deth() {
