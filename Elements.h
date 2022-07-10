@@ -37,7 +37,7 @@ struct Shapes
 {
 	static std::vector<Coord> ship(float a = 1)
 	{
-		return { Coord(0, 1.732 / 3) * a, Coord(1.732 / 3,-1.732 / 6) * a,Coord(0,-1.732 / 12) * a, Coord(-1.732 / 3,-1.732 / 6) * a };
+		return { Coord(0, 1.732 / 3) * a, Coord(1.732 / 3,-1.732 / 6) * a,Coord(0,-1.732 / 6) * a, Coord(-1.732 / 3,-1.732 / 6) * a };
 	}
 	static std::vector<Coord> weapon(float a = 1)
 	{

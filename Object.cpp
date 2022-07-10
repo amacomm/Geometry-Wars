@@ -57,12 +57,12 @@ bool Object::TouchedFrame() {
 }
 bool Object::TouchedFrameX() {
 	for (int i = 0; i < _dots.size(); i++)
-		if ((-_dots[i].x + _coord.x+_speed*_direct.x) <= 0 || (-_dots[i].x + _coord.x + _speed * _direct.x) >= SCREEN_WIDTH) return true;
+		if ((-_dots[i].x + _coord.x+_speedX*_direct.x) <= 0 || (-_dots[i].x + _coord.x + _speedX * _direct.x) >= SCREEN_WIDTH) return true;
 	return false;
 }
 bool Object::TouchedFrameY() {
 	for (int i = 0; i < _dots.size(); i++)
-		if ((-_dots[i].y + _coord.y - _speed * _direct.y) <= 0 || (-_dots[i].y + _coord.y - _speed * _direct.y) >= SCREEN_HEIGHT) return true;
+		if ((-_dots[i].y + _coord.y - _speedY * _direct.y) <= 0 || (-_dots[i].y + _coord.y - _speedY * _direct.y) >= SCREEN_HEIGHT) return true;
 	return false;
 }
 bool Object::IsIncluded(Coord point) {
@@ -84,8 +84,8 @@ bool Object::IsIncluded(Coord point) {
 }
 void Object::Moving(float& dt, Coord coord) {
 	unsigned int start_time = clock();
-	_coord.x += _direct.x * _speed * 60 * dt;
-	_coord.y -= _direct.y * _speed * 60 * dt;
+	_coord.x += _direct.x * _speedX * 60 * dt;
+	_coord.y -= _direct.y * _speedY * 60 * dt;
 	dt += (clock() - start_time) / 1000.0;
 }
 
@@ -94,7 +94,7 @@ Weapon::Weapon(Coord coord, Direct direct, int level, Colour colour) {
 	_dots = Shapes::weapon(SCREEN_HEIGHT / 100);
 	_coord = coord;
 	_direct = direct;
-	_speed = (float)8 + 1 * level;
+	_speedX = _speedY = (float)16 + 1 * level;
 	//PlaySound("shut.wav", GetModuleHandle(NULL), SND_FILENAME | SND_ASYNC );
 }
 void Weapon::MakeMove(float& dt) {
@@ -107,7 +107,7 @@ Ship::Ship(Coord coord , Direct direct , Colour colour ) {
 	_dots = Shapes::ship();
 	for (int i = 0; i < _dots.size(); _dots[i++] *= a);
 	_coord = coord;
-	_speed = 0;
+	_speedX = _speedY = 0;
 	_direct = direct;
 	D3 = false;
 }
@@ -117,17 +117,37 @@ void Ship::ChangeDirection(int x, int y) {
 }
 void Ship::Moving(float& dt, Coord c )  {
 	unsigned int start_time = clock();
-	_coord.x += _speed * dt * 60;
-	_coord.y += _speed2 * dt * 60;
-	if (TouchedFrame()) {
-		_speed *= TouchedFrameX() ? -1 : 1;
-		_speed2 *= TouchedFrameY() ? -1 : 1;
-	}
+	_coord.x += _speedX * dt * 60;
+	_coord.y += _speedY * dt * 60;
 	dt += (clock() - start_time) / 1000.0;
+	if (TouchedFrame()) {
+		int s = _speedX / abs(_speedX);
+		if (TouchedFrameX()) {
+			_speedX *= -1;
+			for (int i = 0; i < _dots.size(); i++) {
+				if ((-_dots[i].x + _coord.x) <= 0)
+					_coord.x += _dots[i].x - _coord.x+5;
+				if( (-_dots[i].x + _coord.x) >= SCREEN_WIDTH)
+					_coord.x -= -SCREEN_WIDTH -_dots[i].x + _coord.x+5;
+			}
+		}
+		if (TouchedFrameY()) {
+			_speedY *= -1;
+			for (int i = 0; i < _dots.size(); i++) {
+				if ((-_dots[i].y + _coord.y) <= 0)
+					_coord.y += _dots[i].y - _coord.y+5;
+				if ((-_dots[i].y + _coord.y) >= SCREEN_HEIGHT)
+					_coord.y -= -SCREEN_HEIGHT - _dots[i].y + _coord.y+5;
+			}
+		}
+		//_speedX *= TouchedFrameX() ? -1 * s : 1 * s;
+		//_speedY *= TouchedFrameY() ? -1 * s : 1 * s;
+
+	}
 }
 void Ship::MakeMove(float& dt) {
-	_speed += _boost * _direct.x * dt * 60;
-	_speed2 += _boost * _direct.y * dt * 60;
+	_speedX += _boost * _direct.x * dt * 60;
+	_speedY += _boost * _direct.y * dt * 60;
 	Moving(dt);
 }
 void Ship::Rotate()  {
@@ -145,8 +165,8 @@ void Ship::Rotate()  {
 }
 void Ship::Braking(float& dt) {
 	unsigned int start_time = clock();
-	_speed += _boost / 2 * (_speed > 0 ? -1 : 1) * dt * 60;
-	_speed2 += _boost / 2 * (_speed2 > 0 ? -1 : 1) * dt * 60;
+	_speedX += _boost / 2 * (_speedX > 0 ? -1 : 1) * dt * 60;
+	_speedY += _boost / 2 * (_speedY > 0 ? -1 : 1) * dt * 60;
 	dt += (clock() - start_time) / 1000.0;
 	Moving(dt);
 }
@@ -154,7 +174,7 @@ Coord Ship::getShipNose() {
 	return _dots[0];
 }
 void Ship::Roll() {
-	Direct roll = _direct + Direct(_speed, _speed2);
+	Direct roll = _direct + Direct(_speedX, _speedY);
 	float t = -atan2(roll.y, roll.x) - 3.1416 / 2;
 	for (int i = 1; i < _dots.size(); i += 2)
 	{
@@ -182,8 +202,8 @@ bool Enemy::ChackDamage(Coord point, float db) {
 }
 
 StableEnemy::StableEnemy(Coord coord, Direct direct, int level, Colour colour) {
-	_life = 5;
-	_speed = 1 + level * 0.25;
+	_life = 3;
+	_speedX =_speedY= 2 + level * 0.25;
 	_colorStabile = _colour = colour;
 	_dots = Shapes::enemy(SCREEN_HEIGHT / 20);
 	_coord = coord;
@@ -218,10 +238,19 @@ void StableEnemy::Rotate(){
 	_turnÑounter += 3.1416 / 2400;
 }
 
+void TrackingEnemy::Distortion() {
+	_dots = Shapes::enemy(SCREEN_HEIGHT / 20);
+	Rotate(3.1416 / 4);
+	for (int i = 0; i < _dots.size(); ++i) {
+		_dots[i].x += (i % 2 ? cos(_dist) : sin(_dist)) * signbit(_dots[i].x - _coord.x) * 5;
+		_dots[i].y += (i % 2 ? sin(_dist) : cos(_dist)) * signbit(_dots[i].y - _coord.y) * 5;
+	}
+	_dist += 3.1416 / 600;
+}
 TrackingEnemy::TrackingEnemy(Coord coord, Direct direct , int level, Colour colour) {
 	_dist = 0;
-	_life = 5;
-	_speed = 1 + level * 0.25;
+	_life = 3;
+	_speedX=_speedY = 1 + level * 0.25;
 	_colorStabile = _colour = colour;
 	_dots = Shapes::enemy(SCREEN_HEIGHT / 20);
 	Rotate(3.1416 / 4);
@@ -247,8 +276,8 @@ bool TrackingEnemy::MakeMove(float& dt, Coord coord) {
 }
 void TrackingEnemy::Moving(float dt, Coord coord) {
 	_direct = Direct(-_coord.x + coord.x, -_coord.y + coord.y);
-	_coord.x += _direct.x * _speed * 60 * dt;
-	_coord.y += _direct.y * _speed * 60 * dt;
+	_coord.x += _direct.x * _speedX * 60 * dt;
+	_coord.y += _direct.y * _speedY * 60 * dt;
 }
 
 
@@ -302,7 +331,7 @@ extern void Draw(uint32_t(*image)[SCREEN_WIDTH], Object& o, unsigned int** img) 
 		}
 	else {
 		std::vector<float> lambda(3);
-		std::vector<Coord> texture = { Coord(21, 0), Coord(44,33) ,Coord(28, 21), Coord(0,33) };
+		std::vector<Coord> texture = { Coord(21, 0), Coord(44,33), Coord(21, 33) , Coord(0,33)};
 		//std::vector<Coord> texture = { Coord(0, 0), Coord(49,0) ,Coord(49, 50), Coord(0,49)};
 		bool s = true;
 		for (int t = 0; t < o._dots.size() - 2; t++) {

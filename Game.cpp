@@ -29,10 +29,12 @@ std::vector<unsigned int**> alf;
 float const pauseConst = 2;
 float const enemyCreateConst = 0.25;
 float const shootConst = 0.2;
+float const Xc = 0.5;
 
 float pause;
 float enemyCreate;
 float shootTime;
+float X;
 Player player;
 float start;
 bool gameover;
@@ -128,17 +130,15 @@ void act(float dt)
 		weapon.push_back(Weapon(ship.getCoord() - ship.getShipNose(), Direct(ship.getDirect().x - ship.getShipNose().x, ship.getDirect().y + ship.getShipNose().y), player.getLevel()));
 	}
 	shootTime -= dt;
+	X -= dt;
 	ship.ChangeDirection(get_cursor_x(), get_cursor_y());
 	start_time = clock()-start_time ;
 	dt += start_time/1000.0;
 	start_time = clock();
-	if (is_key_pressed('W'))
-		ship.MakeMove(dt);
-	else if (is_key_pressed('S'))
-		ship.Braking(dt);
-	else ship.Moving(dt);
-	if (is_key_pressed('X') && shootTime <= 0)
+	if (is_key_pressed('X') && X <= 0) {
 		ship.set3D();
+		X = Xc;
+	}
 	start_time = clock()-start_time ;
 	dt += start_time/1000.0;
 	start_time = clock();
@@ -189,6 +189,11 @@ void act(float dt)
 			restart();
 		return;
 	}
+	if (is_key_pressed('W'))
+		ship.MakeMove(dt);
+	else if (is_key_pressed('S'))
+		ship.Braking(dt);
+	else ship.Moving(dt);
 
 	if (is_key_pressed(VK_ESCAPE))
 		schedule_quit_game();

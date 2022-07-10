@@ -24,7 +24,7 @@ public:
 
 class Object {
 protected:
-	float _speed;
+	float _speedX, _speedY;
 	std::vector<Coord> _dots;
 	Coord _coord;
 	Direct _direct;
@@ -50,7 +50,6 @@ public:
 };
 
 class Ship final: public Object {
-	float _speed2 = 0;
 	float _boost = (float)1 / 30;
 	bool D3;
 public:
@@ -144,15 +143,7 @@ public:
 
 class TrackingEnemy: public Enemy {
 	float _dist;
-	void Distortion() {
-		_dots = Shapes::enemy(SCREEN_HEIGHT / 20);
-		Rotate(3.1416 / 4);
-		for (int i = 0; i < _dots.size(); ++i) {
-			_dots[i].x += (i%2?cos(_dist): sin(_dist))*signbit(_dots[i].x-_coord.x)*5;
-			_dots[i].y += (i % 2 ? sin(_dist):cos(_dist)) * signbit(_dots[i].y - _coord.y)*5 ;
-		}
-		_dist += 3.1416 / 600;
-	}
+	void Distortion();
 public:
 	TrackingEnemy(Coord coord, Direct direct = Direct(0, 1), int level = 0, Colour colour = Colour(255, 0, 255));
 	bool MakeMove(float& dt, Coord coord = Coord()) override;
@@ -163,7 +154,7 @@ public:
 struct Script
 {
 	static std::vector<Enemy*> one(int level = 0) {
-		int e2 = (rand() % (level < 1 ? 1 : level)) % 11;
+		int e2 = (rand() % (level < 1 ? 1 : level+1)) % 11;
 		int e1 = 10 - e2;
 		std::vector<Enemy*> vec;
 		int n = e1 + e2;
@@ -186,7 +177,7 @@ struct Script
 	}
 
 	static std::vector<Enemy*> two(int level = 0) {
-		int e2 = (rand() % (level < 1 ? 1 : level)) % 11;
+		int e2 = (rand() % (level < 1 ? 1 : level+1)) % 11;
 		int e1 = 10 - e2;
 		std::vector<Enemy*> vec;
 		int n = e1 + e2;
@@ -200,7 +191,7 @@ struct Script
 	}
 
 	static std::vector<Enemy*> three(int level = 0) {
-		int e2 = (rand() % (level < 1 ? 1 : level)) % 11;
+		int e2 = (rand() % (level < 1 ? 1 : level+1)) % 11;
 		int e1 = 10 - e2;
 		std::vector<Enemy*> vec;
 		int n = e1 + e2;
